@@ -17,8 +17,8 @@ sudo ./MachineVPNtest.sh -m [mode] [-v]
 
 ## Options
 `-m [mode]`: Specify the mode of operation. Available modes:
-    `machine`: Test a single machine on all VPN servers.
-    `vpn`: Test all machines on a single VPN server.
+`machine`: Test a single machine on all VPN servers.
+`vpn`: Test all machines on a single VPN server.
 `single`: Test a single machine on a single VPN server.
 `startingpoint`: Test a single StartingPoint machine on a StartingPoint VPN server.
 `-v`: Enable verbose logging.
