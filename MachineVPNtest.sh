@@ -1,8 +1,8 @@
 #!/bin/bash
 
-TOKEN='TOKEN'
+TOKEN=''
 
-VPN_SERVER_IDS=(14 29 289 113 201 7 44 314)
+VPN_SERVER_IDS=(14 29 289 113 201 7 44 314 1 2 5 6 8 9 11 17 18 20 21 23 27 28 30 31 33 35 36 41 42 45 46 47 48 49 50 51 52 54 56 57 58 61 65 66 67 68 69 70 71 73 74 77 122 177 182 219 220 222 223 251 252 280 86 89 253 254)
 
 # Arrays to hold machine IDs and names
 MACHINE_IDS=(611 608 605 604 603 602 601 600 599 598 597 596 595 594 593 592 591 590 589 588 587 586 585)
@@ -31,6 +31,11 @@ shift $((OPTIND - 1))
 green_tick() {
     echo -e "\033[0;32m\xE2\x9C\x85 $1\033[0m"
 }
+
+red_cross() {
+    echo -e "\033[0;31m\xE2\x9D\x8C $1\033[0m"
+}
+
 
 # Function to log verbose messages
 log_verbose() {
@@ -65,6 +70,65 @@ map_vpn_server_name_to_id() {
     "EU VIP 4") VPN_SERVER_ID=7 ;;
     "EU VIP 14") VPN_SERVER_ID=44 ;;
     "EU VIP +2") VPN_SERVER_ID=314 ;;
+    "EU FREE 1") VPN_SERVER_ID=1 ;;
+    "EU VIP 1") VPN_SERVER_ID=2 ;;
+    "EU VIP 2") VPN_SERVER_ID=5 ;;
+    "EU VIP 3") VPN_SERVER_ID=6 ;;
+    "EU VIP 5") VPN_SERVER_ID=8 ;;
+    "EU VIP 6") VPN_SERVER_ID=9 ;;
+    "US VIP 1") VPN_SERVER_ID=11 ;;
+    "US VIP 3") VPN_SERVER_ID=17 ;;
+    "EU VIP 7") VPN_SERVER_ID=18 ;;
+    "US VIP 4") VPN_SERVER_ID=20 ;;
+    "EU VIP 8") VPN_SERVER_ID=21 ;;
+    "US VIP 5") VPN_SERVER_ID=23 ;;
+    "US VIP 6") VPN_SERVER_ID=27 ;;
+    "EU VIP 9") VPN_SERVER_ID=28 ;;
+    "EU VIP 10") VPN_SERVER_ID=30 ;;
+    "US VIP 8") VPN_SERVER_ID=31 ;;
+    "EU VIP 11") VPN_SERVER_ID=33 ;;
+    "US VIP 9") VPN_SERVER_ID=35 ;;
+    "EU VIP 12") VPN_SERVER_ID=36 ;;
+    "US VIP 11") VPN_SERVER_ID=41 ;;
+    "EU VIP 13") VPN_SERVER_ID=42 ;;
+    "US VIP 12") VPN_SERVER_ID=45 ;;
+    "US VIP 13") VPN_SERVER_ID=46 ;;
+    "EU VIP 15") VPN_SERVER_ID=47 ;;
+    "US VIP 14") VPN_SERVER_ID=48 ;;
+    "EU VIP 16") VPN_SERVER_ID=49 ;;
+    "US VIP 15") VPN_SERVER_ID=50 ;;
+    "EU VIP 17") VPN_SERVER_ID=51 ;;
+    "US VIP 16") VPN_SERVER_ID=52 ;;
+    "EU VIP 18") VPN_SERVER_ID=54 ;;
+    "US VIP 17") VPN_SERVER_ID=56 ;;
+    "EU VIP 19") VPN_SERVER_ID=57 ;;
+    "US VIP 18") VPN_SERVER_ID=58 ;;
+    "EU VIP 20") VPN_SERVER_ID=61 ;;
+    "US VIP 19") VPN_SERVER_ID=65 ;;
+    "EU VIP 21") VPN_SERVER_ID=66 ;;
+    "US VIP 20") VPN_SERVER_ID=67 ;;
+    "EU VIP 22") VPN_SERVER_ID=68 ;;
+    "US VIP 21") VPN_SERVER_ID=69 ;;
+    "EU VIP 23") VPN_SERVER_ID=70 ;;
+    "US VIP 22") VPN_SERVER_ID=71 ;;
+    "EU VIP 24") VPN_SERVER_ID=73 ;;
+    "US VIP 23") VPN_SERVER_ID=74 ;;
+    "EU VIP 25") VPN_SERVER_ID=77 ;;
+    "EU VIP 28") VPN_SERVER_ID=122 ;;
+    "AU FREE 1") VPN_SERVER_ID=177 ;;
+    "AU VIP 1") VPN_SERVER_ID=182 ;;
+    "EU FREE 3") VPN_SERVER_ID=253 ;;
+    "US FREE 3") VPN_SERVER_ID=254 ;;
+    "EU VIP 26") VPN_SERVER_ID=219 ;;
+    "US VIP 26") VPN_SERVER_ID=220 ;;
+    "EU VIP 27") VPN_SERVER_ID=222 ;;
+    "US VIP 27") VPN_SERVER_ID=223 ;;
+    "SG FREE 1") VPN_SERVER_ID=251 ;;
+    "SG VIP 1") VPN_SERVER_ID=252 ;;
+    "SG VIP 2") VPN_SERVER_ID=280 ;;
+    "US VIP 25") VPN_SERVER_ID=89 ;;
+    "US VIP 24") VPN_SERVER_ID=86 ;;
+    "EU VIP 29") VPN_SERVER_ID=329 ;;
     *)
       echo "Error: Unknown VPN server name"
       exit 1
@@ -91,7 +155,6 @@ switch_vpn_server() {
     sleep 10
     server_name=$(echo "$response" | jq -r '.data.friendly_name')
     green_tick "Changed VPN server to $server_name"
-    log_verbose "Now connected to $server_name"
 }
 
 # Download VPN file
@@ -138,6 +201,35 @@ spawn_machine() {
     sleep 30
 }
 
+
+wait_for_spawn() {
+    local name="$1"
+    if [[ "$name" == *"VIP"* ]]; then
+        echo "VIP server detected, waiting for 40 seconds..."
+        sleep 40
+    else
+        echo "Non-VIP server detected, no wait required."
+    fi
+}
+
+
+
+nmap_scan() {
+    ip=$1
+    if [ -z "$ip" ]; then
+        echo "Error: No IP provided for nmap scan."
+        return 1
+    fi
+
+    echo "Performing nmap scan on $ip..."
+    nmap_output=$(nmap -T4 --min-rate=1000 -F "$ip")
+    
+    green_tick "Nmap scan completed on $ip"
+    echo "$nmap_output"
+  
+}
+
+
 # Get machine IP
 get_machine_ip() {
     local machine_ip
@@ -160,12 +252,17 @@ ping_machine() {
     if [ -z "$ip" ]; then
         echo "Error: Failed to get machine IP for server $server_name"
     else
-        if ping -c 3 "$ip" > /dev/null; then
+        if ping -c 4 "$ip" > /dev/null; then
             green_tick "Machine Live and Running on $server_name"
-            ping_output=$(ping -c 3 "$ip")
+            ping_output=$(ping -c 4 "$ip")
             log_verbose "$ping_output"
+            nmap_scan "$ip"
+
         else
-            echo "Error: Machine is not reachable on $server_name"
+            
+            red_cross "Error: Machine is not reachable on $server_name"
+            ping_output=$(ping -c 4 "$ip")
+            log_verbose "$ping_output"
         fi
     fi
 }
@@ -185,10 +282,11 @@ test_machine_on_all_vpns() {
     connect_to_vpn "$vpn_server_id"
     spawn_machine
     
-    green_tick "Testing $MACHINE_NAME on VPN $server_name"
     
     ip=$(get_machine_ip)
     echo "Machine's IP is $ip"
+    green_tick "Testing $MACHINE_NAME on VPN $server_name"
+
     ping_machine "$ip"
     
     echo "Waiting for 20 seconds before switching to the next VPN server..."
@@ -211,16 +309,47 @@ test_all_machines_on_vpn() {
     MACHINE_NAME=${MACHINE_NAMES[$i]}
     spawn_machine
 
-    green_tick "Testing $MACHINE_NAME on VPN $server_name"
     
     ip=$(get_machine_ip)
     echo "Machine's IP is $ip"
+
+    green_tick "Testing $MACHINE_NAME on VPN $server_name"
+
     ping_machine "$ip"
     
     echo "Waiting for 20 seconds before testing the next machine..."
     sleep 10
   done
 }
+
+
+# Main loop for testing one machine on one VPN server
+test_machine_on_vpn() {
+  local machine_name="$1"
+  local vpn_server_name="$2"
+
+  if ! map_machine_name_to_id "$machine_name"; then
+    echo "Error: Machine name not found"
+    exit 1
+  fi
+
+  map_vpn_server_name_to_id "$vpn_server_name"
+
+  stop_active_machines
+  switch_vpn_server "$VPN_SERVER_ID"
+  download_vpn_file "$VPN_SERVER_ID"
+  connect_to_vpn "$VPN_SERVER_ID"
+  spawn_machine
+  
+  
+  ip=$(get_machine_ip)
+  echo "Machine's IP is $ip"
+  wait_for_spawn "$server_name"
+  green_tick "Testing $MACHINE_NAME on VPN $server_name"
+  ping_machine "$ip"
+}
+
+
 
 # Main logic
 if [ "$mode" == "machine" ]; then
@@ -230,6 +359,11 @@ if [ "$mode" == "machine" ]; then
 elif [ "$mode" == "vpn" ]; then
   read -p "Enter VPN server name: " VPN_SERVER_NAME
   test_all_machines_on_vpn "$VPN_SERVER_NAME"
+elif [ "$mode" == "single" ]; then
+  read -p "Enter machine name: " MACHINE_NAME
+  MACHINE_NAME=$(echo "$MACHINE_NAME" | tr '[:upper:]' '[:lower:]')
+  read -p "Enter VPN server name: " VPN_SERVER_NAME
+  test_machine_on_vpn "$MACHINE_NAME" "$VPN_SERVER_NAME"
 else
   echo "Error: Invalid mode. Use -m machine to test one machine on all VPN servers or -m vpn to test all machines on one VPN server."
   exit 1
