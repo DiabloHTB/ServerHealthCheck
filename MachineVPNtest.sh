@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TOKEN='TOKEN'
+
 
 VPN_SERVER_IDS=(14 29 289 113 201 7 44 314 1 2 5 6 8 9 11 17 18 20 21 23 27 28 30 31 33 35 36 41 42 45 46 47 48 49 50 51 52 54 56 57 58 61 65 66 67 68 69 70 71 73 74 77 122 177 182 219 220 222 223 251 252 280 86 89 253 254 38 202 426 288)
 
@@ -16,8 +16,8 @@ MACHINE_NAMES=("axlle" "editorial" "blurry" "freelancer" "boardlight" "magicgard
 
 
 # Arrays for StartingPoint machine IDs and names
-STARTINGPOINT_MACHINE_IDS=(520 515 501 489 479 472 461 449 441 407 406 405 404 403 402 397 396 395 394 393 295 294 293 292 291)
-STARTINGPOINT_MACHINE_NAMES=("funnel" "synced" "mongod" "three" "base" "redeemer" "responder" "bike" "unified" "tactics" "pennyworth" "ignition" "crocodile" "sequel" "appointment" "preignition" "explosion" "dancing" "meow" "fawn" "base (legacy)" "guard" "markup" "included" "pathfinder")
+STARTINGPOINT_MACHINE_IDS=(520 515 501 489 479 472 461 449 441 407 406 405 404 403 402 397 396 395 394 393 295 294 293 292 291 290 289 288 287)
+STARTINGPOINT_MACHINE_NAMES=("funnel" "synced" "mongod" "three" "base" "redeemer" "responder" "bike" "unified" "tactics" "pennyworth" "ignition" "crocodile" "sequel" "appointment" "preignition" "explosion" "dancing" "meow" "fawn" "base (legacy)" "guard" "markup" "included" "pathfinder" "shield" "vaccine" "oopsie" "archetype")
 
 
 verbose=false
@@ -352,7 +352,7 @@ test_machine_on_startingpoint_vpn() {
 
   ip=$(get_sp_ip)
   echo "Machine's IP is $ip"
-  wait_for_spawn "$server_name"
+  sleep 20
   green_tick "Testing $MACHINE_NAME on VPN $server_name"
   ping_machine "$ip"
 }
