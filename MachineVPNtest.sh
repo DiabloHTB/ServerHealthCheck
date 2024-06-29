@@ -1,12 +1,24 @@
 #!/bin/bash
 
-TOKEN=''
+TOKEN='TOKEN'
 
-VPN_SERVER_IDS=(14 29 289 113 201 7 44 314 1 2 5 6 8 9 11 17 18 20 21 23 27 28 30 31 33 35 36 41 42 45 46 47 48 49 50 51 52 54 56 57 58 61 65 66 67 68 69 70 71 73 74 77 122 177 182 219 220 222 223 251 252 280 86 89 253 254)
+VPN_SERVER_IDS=(14 29 289 113 201 7 44 314 1 2 5 6 8 9 11 17 18 20 21 23 27 28 30 31 33 35 36 41 42 45 46 47 48 49 50 51 52 54 56 57 58 61 65 66 67 68 69 70 71 73 74 77 122 177 182 219 220 222 223 251 252 280 86 89 253 254 38 202 426 288)
+
+# Arrays for StartingPoint server IDs and names
+STARTINGPOINT_SERVER_IDS=(412 413 414 415 440 441)
+
+
 
 # Arrays to hold machine IDs and names
 MACHINE_IDS=(611 608 605 604 603 602 601 600 599 598 597 596 595 594 593 592 591 590 589 588 587 586 585)
 MACHINE_NAMES=("axlle" "editorial" "blurry" "freelancer" "boardlight" "magicgardens" "solarlab" "mailing" "intuition" "runner" "usage" "iclean" "mist" "headless" "wifinetictwo" "formulax" "builder" "perfection" "jab" "office" "crafty" "skyfall" "pov")
+
+
+
+# Arrays for StartingPoint machine IDs and names
+STARTINGPOINT_MACHINE_IDS=(520 515 501 489 479 472 461 449 441 407 406 405 404 403 402 397 396 395 394 393 295 294 293 292 291)
+STARTINGPOINT_MACHINE_NAMES=("funnel" "synced" "mongod" "three" "base" "redeemer" "responder" "bike" "unified" "tactics" "pennyworth" "ignition" "crocodile" "sequel" "appointment" "preignition" "explosion" "dancing" "meow" "fawn" "base (legacy)" "guard" "markup" "included" "pathfinder")
+
 
 verbose=false
 mode=""
@@ -52,6 +64,20 @@ map_machine_name_to_id() {
     if [[ "${MACHINE_NAMES[$i]}" == "$name" ]]; then
       MACHINE_ID=${MACHINE_IDS[$i]}
       MACHINE_NAME="${MACHINE_NAMES[$i]}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+
+map_startingpoint_machine_name_to_id() {
+  local name="$1"
+  local i
+  for i in "${!STARTINGPOINT_MACHINE_NAMES[@]}"; do
+    if [[ "${STARTINGPOINT_MACHINE_NAMES[$i]}" == "$name" ]]; then
+      MACHINE_ID=${STARTINGPOINT_MACHINE_IDS[$i]}
+      MACHINE_NAME="${STARTINGPOINT_MACHINE_NAMES[$i]}"
       return 0
     fi
   done
@@ -129,12 +155,33 @@ map_vpn_server_name_to_id() {
     "US VIP 25") VPN_SERVER_ID=89 ;;
     "US VIP 24") VPN_SERVER_ID=86 ;;
     "EU VIP 29") VPN_SERVER_ID=329 ;;
+    "US VIP 10") VPN_SERVER_ID=38 ;;
+    "US FREE 2") VPN_SERVER_ID=202 ;;
+    "SG VIP +1") VPN_SERVER_ID=426;;
+    "EU VIP +1") VPN_SERVER_ID=288 ;;
     *)
       echo "Error: Unknown VPN server name"
       exit 1
       ;;
   esac
 }
+
+map_startingpoint_server_name_to_id() {
+  local name="$1"
+  case "$name" in
+    "EU SP 1") VPN_SERVER_ID=412 ;;
+    "EU SP VIP 1") VPN_SERVER_ID=413 ;;
+    "US SP 1") VPN_SERVER_ID=414 ;;
+    "US SP VIP 1") VPN_SERVER_ID=415 ;;
+    "EU SP 2") VPN_SERVER_ID=440 ;;
+    "US SP 2") VPN_SERVER_ID=441 ;;
+    *)
+      echo "Error: Unknown StartingPoint server name"
+      exit 1
+      ;;
+  esac
+}
+
 
 # Stop any active machines
 stop_active_machines() {
@@ -246,6 +293,23 @@ get_machine_ip() {
     done
 }
 
+
+# Get machine IP
+get_sp_ip() {
+    local machine_ip
+    while true; do
+        response=$(curl -s "https://labs.hackthebox.com/api/v4/sp/profile/$MACHINE_ID" \
+            -H "accept: application/json, text/plain, */*" \
+            -H "authorization: Bearer $TOKEN")
+        machine_ip=$(echo $response | jq -r '.info.ip')
+        if [ -n "$machine_ip" ] && [[ "$machine_ip" =~ ^10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+            echo $machine_ip
+            return 0
+        fi
+        sleep 5
+    done
+}
+
 # Ping machine IP and handle errors
 ping_machine() {
     ip=$1
@@ -266,6 +330,34 @@ ping_machine() {
         fi
     fi
 }
+
+
+
+test_machine_on_startingpoint_vpn() {
+  local machine_name="$1"
+  local vpn_server_name="$2"
+
+  if ! map_startingpoint_machine_name_to_id "$machine_name"; then
+    echo "Error: Machine name not found"
+    exit 1
+  fi
+
+  map_startingpoint_server_name_to_id "$vpn_server_name"
+
+  stop_active_machines
+  switch_vpn_server "$VPN_SERVER_ID"
+  download_vpn_file "$VPN_SERVER_ID"
+  connect_to_vpn "$VPN_SERVER_ID"
+  spawn_machine
+
+  ip=$(get_sp_ip)
+  echo "Machine's IP is $ip"
+  wait_for_spawn "$server_name"
+  green_tick "Testing $MACHINE_NAME on VPN $server_name"
+  ping_machine "$ip"
+}
+
+
 
 # Main loop for testing one machine on all VPN servers
 test_machine_on_all_vpns() {
@@ -364,6 +456,11 @@ elif [ "$mode" == "single" ]; then
   MACHINE_NAME=$(echo "$MACHINE_NAME" | tr '[:upper:]' '[:lower:]')
   read -p "Enter VPN server name: " VPN_SERVER_NAME
   test_machine_on_vpn "$MACHINE_NAME" "$VPN_SERVER_NAME"
+elif [ "$mode" == "startingpoint" ]; then
+  read -p "Enter StartingPoint Machine name: " MACHINE_NAME
+  MACHINE_NAME=$(echo "$MACHINE_NAME" | tr '[:upper:]' '[:lower:]')
+  read -p "Enter StartingPoint Server name: " VPN_SERVER_NAME
+  test_machine_on_startingpoint_vpn "$MACHINE_NAME" "$VPN_SERVER_NAME"
 else
   echo "Error: Invalid mode. Use -m machine to test one machine on all VPN servers or -m vpn to test all machines on one VPN server."
   exit 1
