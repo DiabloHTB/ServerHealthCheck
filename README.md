@@ -16,26 +16,26 @@ sudo ./MachineVPNtest.sh -m [mode] [-v]
 ```
 
 ## Options
-`-m [mode]`: Specify the mode of operation. Available modes:
-`machine`: Test a single machine on all VPN servers.
-`vpn`: Test all machines on a single VPN server.
-`single`: Test a single machine on a single VPN server.
-`startingpoint`: Test a single StartingPoint machine on a StartingPoint VPN server.
-`-v`: Enable verbose logging.
+- `-m [mode]`: Specify the mode of operation. Available modes:
+    - `machine`: Test a single machine on all VPN servers.
+    - `vpn`: Test all machines on a single VPN server.
+    - `single`: Test a single machine on a single VPN server.
+    - `startingpoint`: Test a single StartingPoint machine on a StartingPoint VPN server.
+- `-v`: Enable verbose logging.
 
 
 ## Configuration
 `TOKEN`: Your HTB APP token, You can get this from your [Profile Settings](https://app.hackthebox.com/profile/settings)
 ## Functions
 
-`stop_active_machines`: Stops any active machines.
-`switch_vpn_server`: Switches to a specified VPN server.
-`download_vpn_file`: Downloads the VPN file for the specified VPN server.
-`connect_to_vpn`: Connects to the VPN server.
-`spawn_machine`: Spawns a machine.
-`get_machine_ip`: Retrieves the IP address of the machine.
-`ping_machine`: Pings the machine and performs an nmap scan if reachable.
-`nmap_scan`: Performs an nmap scan on the specified IP.
+- `stop_active_machines`: Stops any active machines.
+- `switch_vpn_server`: Switches to a specified VPN server.
+- `download_vpn_file`: Downloads the VPN file for the specified VPN server.
+- `connect_to_vpn`: Connects to the VPN server.
+- `spawn_machine`: Spawns a machine.
+- `get_machine_ip`: Retrieves the IP address of the machine.
+- `ping_machine`: Pings the machine and performs an nmap scan if reachable.
+- `nmap_scan`: Performs an nmap scan on the specified IP.
 ---
 ## Steps on How the Script Works
 - Kills all VPN connections using `sudo killall openvpn` 
