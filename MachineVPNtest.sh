@@ -205,7 +205,7 @@ map_startingpoint_server_name_to_id() {
 # Stop any active machines
 stop_active_machines() {
     response=$(curl -s --location --request POST "https://labs.hackthebox.com/api/v4/machine/stop" -H "Authorization: Bearer $TOKEN")
-    green_tick "Stopped active machines"
+    echo "[+]Stopped active machines"
     log_verbose "Response: $response"
 }
 
@@ -220,7 +220,7 @@ switch_vpn_server() {
     
     sleep 10
     server_name=$(echo "$response" | jq -r '.data.friendly_name')
-    green_tick "Changed VPN server to $server_name"
+     echo "[+]Changed VPN server to $server_name"
 }
 
 # Download VPN file
@@ -231,21 +231,21 @@ download_vpn_file() {
         -H "accept: application/json, text/plain, */*" \
         -H "authorization: Bearer $TOKEN" \
         --output vpn"$vpn_server_id".ovpn)
-    green_tick "Downloaded VPN file for $server_name"
+     echo "[+]Downloaded VPN file for $server_name"
     log_verbose "VPN file downloaded as vpn$vpn_server_id.ovpn"
 }
 
 # Connect to VPN
 connect_to_vpn() {
     local vpn_server_id=$1
-    sudo killall openvpn
+    sudo killall openvpn > /dev/null 2>&1
     sleep 10
     sudo openvpn vpn"$vpn_server_id".ovpn > /tmp/openvpn.log 2>&1 &  # Redirect output to a temporary log file
     sleep 30
     # Wait for "Initialization Sequence Completed" message in openvpn output
     for i in {1..30}; do
         if grep -q "Initialization Sequence Completed" /tmp/openvpn.log; then
-            green_tick "VPN connected for server $server_name"
+            echo "[+]VPN connected for server $server_name"
             rm /tmp/openvpn.log  # Clean up temporary log file
             return 0
         fi
@@ -259,19 +259,24 @@ connect_to_vpn() {
 # Spawn a machine
 spawn_machine() {
     response=$(curl -s --location --request POST "https://labs.hackthebox.com/api/v4/machine/play/$MACHINE_ID" -H "Authorization: Bearer $TOKEN")
-    green_tick "Spawned machine $MACHINE_NAME on $server_name"
+     echo "[+]Spawning machine $MACHINE_NAME on $server_name"
     log_verbose "Response: $response"
     
     # Wait 30 seconds to allow machine to initialize before getting IP
-    echo "Getting the IP of $MACHINE_NAME on $server_name"
-    sleep 30
+    SECONDS=0
+    while [ $SECONDS -lt 20 ]; do
+      for s in / - \\ \|; do
+        printf "\r$s"
+        sleep .1
+      done
+    done
 }
 
 
 wait_for_spawn() {
     local name="$1"
     if [[ "$name" == *"VIP"* ]]; then
-        echo "VIP server detected, waiting for 40 seconds..."
+        echo "[+]VIP server detected, waiting for few more seconds for the machine to fully spawn"
         sleep 40
     else
         echo "Non-VIP server detected, no wait required."
@@ -287,10 +292,16 @@ nmap_scan() {
         return 1
     fi
 
-    echo "Performing nmap scan on $ip..."
+    echo "[+] Performing nmap scan on $ip..."
     nmap_output=$(nmap -T4 --min-rate=1000 -F "$ip")
-    
-    green_tick "Nmap scan completed on $ip"
+    SECONDS=0
+    while [ $SECONDS -lt 5 ]; do
+      for s in / - \\ \|; do
+        printf "\r$s"
+        sleep .1
+      done
+    done
+     echo "[+] Nmap scan completed on $ip"
     echo "$nmap_output"
   
 }
@@ -336,7 +347,7 @@ ping_machine() {
         echo "Error: Failed to get machine IP for server $server_name"
     else
         if ping -c 4 "$ip" > /dev/null; then
-            green_tick "Machine Live and Running on $server_name"
+            green_tick "Machine $MACHINE_NAME Live and Running on $server_name"
             ping_output=$(ping -c 4 "$ip")
             log_verbose "$ping_output"
             nmap_scan "$ip"
@@ -372,7 +383,7 @@ test_machine_on_startingpoint_vpn() {
   ip=$(get_sp_ip)
   echo "Machine's IP is $ip"
   sleep 20
-  green_tick "Testing $MACHINE_NAME on VPN $server_name"
+  echo "[+]Testing $MACHINE_NAME on VPN $server_name"
   ping_machine "$ip"
 }
 
@@ -396,11 +407,12 @@ test_machine_on_all_vpns() {
     
     ip=$(get_machine_ip)
     echo "Machine's IP is $ip"
-    green_tick "Testing $MACHINE_NAME on VPN $server_name"
+    wait_for_spawn "$server_name"
+    echo "[+]Testing $MACHINE_NAME on VPN $server_name"
 
     ping_machine "$ip"
     
-    echo "Waiting for 20 seconds before switching to the next VPN server..."
+    echo "------- Moving to the next VPN server ---------"
     sleep 10
   done
 }
@@ -418,17 +430,18 @@ test_all_machines_on_vpn() {
   for i in "${!MACHINE_IDS[@]}"; do
     MACHINE_ID=${MACHINE_IDS[$i]}
     MACHINE_NAME=${MACHINE_NAMES[$i]}
+    stop_active_machines
     spawn_machine
 
     
     ip=$(get_machine_ip)
     echo "Machine's IP is $ip"
-
-    green_tick "Testing $MACHINE_NAME on VPN $server_name"
+    wait_for_spawn "$server_name"
+    echo "[+]Testing $MACHINE_NAME on VPN $server_name"
 
     ping_machine "$ip"
     
-    echo "Waiting for 20 seconds before testing the next machine..."
+    echo "--------- Moving to the next machine ---------"
     sleep 10
   done
 }
@@ -456,7 +469,7 @@ test_machine_on_vpn() {
   ip=$(get_machine_ip)
   echo "Machine's IP is $ip"
   wait_for_spawn "$server_name"
-  green_tick "Testing $MACHINE_NAME on VPN $server_name"
+  echo "[+]Testing $MACHINE_NAME on VPN $server_name"
   ping_machine "$ip"
 }
 

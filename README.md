@@ -51,15 +51,15 @@ sudo ./MachineVPNtest.sh -m [mode] [-v]
 ### Example Usage
 Test a Single Machine on All VPN Servers
 ```bash
-sudo ./MachineVPNtest.sh -m machine -v
+sudo ./MachineVPNtest.sh -m machine 
 ```
 Test ALL Active Machines on a Single VPN Server
 ```bash
-sudo ./MachineVPNtest.sh -m vpn -v
+sudo ./MachineVPNtest.sh -m vpn 
 ```
 Test a Single Machine on a Single VPN Server
 ```bash
-sudo ./MachineVPNtest.sh -m single -v
+sudo ./MachineVPNtest.sh -m single 
 ```
 Test a Single StartingPoint Machine on a StartingPoint VPN Server
 ```bash
