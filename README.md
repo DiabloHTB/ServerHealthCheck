@@ -63,7 +63,7 @@ sudo ./MachineVPNtest.sh -m single
 ```
 Test a Single StartingPoint Machine on a StartingPoint VPN Server
 ```bash
-sudo ./MachineVPNtest.sh -m startingpoint -v
+sudo ./MachineVPNtest.sh -m startingpoint 
 ```
 When prompted, enter the machine name and VPN server name as needed.
 
