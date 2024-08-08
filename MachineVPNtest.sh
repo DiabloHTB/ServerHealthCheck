@@ -29,8 +29,8 @@ STARTINGPOINT_SERVER_IDS=(412 413 414 415 440 441)
 
 
 # Arrays to hold machine IDs and names
-MACHINE_IDS=(611 608 605 604 603 602 601 600 599 598 597 596 595 594 593 592 591 590 589 588 587 586 585)
-MACHINE_NAMES=("axlle" "editorial" "blurry" "freelancer" "boardlight" "magicgardens" "solarlab" "mailing" "intuition" "runner" "usage" "iclean" "mist" "headless" "wifinetictwo" "formulax" "builder" "perfection" "jab" "office" "crafty" "skyfall" "pov")
+MACHINE_IDS=(619 611 608 605 604 603 602 601 600 599 598 597 596 595 594 593 592 591 590 589 588 587 586 585)
+MACHINE_NAMES=("resource" "axlle" "editorial" "blurry" "freelancer" "boardlight" "magicgardens" "solarlab" "mailing" "intuition" "runner" "usage" "iclean" "mist" "headless" "wifinetictwo" "formulax" "builder" "perfection" "jab" "office" "crafty" "skyfall" "pov")
 
 
 
@@ -41,9 +41,10 @@ STARTINGPOINT_MACHINE_NAMES=("funnel" "synced" "mongod" "three" "base" "redeemer
 
 verbose=false
 mode=""
+use_arena=false
 
-# Check for verbose flag and mode option
-while getopts ":vm:" option; do
+# Check for verbose flag, mode option, and -s argument
+while getopts ":vsm:" option; do
   case $option in
     v)
       verbose=true
@@ -51,10 +52,14 @@ while getopts ":vm:" option; do
     m)
       mode=$OPTARG
       ;;
+    s)
+      use_arena=true
+      ;;
     *)
       ;;
   esac
 done
+
 
 shift $((OPTIND - 1))
 
@@ -257,20 +262,32 @@ connect_to_vpn() {
 }
 
 # Spawn a machine
+
+
+
 spawn_machine() {
-    response=$(curl -s --location --request POST "https://labs.hackthebox.com/api/v4/machine/play/$MACHINE_ID" -H "Authorization: Bearer $TOKEN")
-     echo "[+]Spawning machine $MACHINE_NAME on $server_name"
+    local url="https://labs.hackthebox.com/api/v4/machine/play/$MACHINE_ID"
+    
+    # Change URL if -s flag is provided
+    if [ "$use_arena" = true ]; then
+        url="https://labs.hackthebox.com/api/v4/arena/start"
+    fi
+    
+    response=$(curl -s --location --request POST "$url" -H "Authorization: Bearer $TOKEN")
+    echo "[+]Spawning machine $MACHINE_NAME on $server_name"
     log_verbose "Response: $response"
     
     # Wait 30 seconds to allow machine to initialize before getting IP
     SECONDS=0
     while [ $SECONDS -lt 20 ]; do
-      for s in / - \\ \|; do
-        printf "\r$s"
-        sleep .1
-      done
+        for s in / - \\ \|; do
+            printf "\r$s"
+            sleep .1
+        done
     done
 }
+
+
 
 
 wait_for_spawn() {
@@ -471,6 +488,8 @@ test_machine_on_vpn() {
   wait_for_spawn "$server_name"
   echo "[+]Testing $MACHINE_NAME on VPN $server_name"
   ping_machine "$ip"
+  sudo killall openvpn > /dev/null 2>&1
+
 }
 
 

@@ -16,6 +16,7 @@ sudo ./MachineVPNtest.sh -m [mode] [-v]
 ```
 
 ## Options
+- `-s`: To test the latest seasonal machine, you will still need to enter the name when testing
 - `-m [mode]`: Specify the mode of operation. Available modes:
     - `machine`: Test a single machine on all VPN servers.
     - `vpn`: Test all machines on a single VPN server.
