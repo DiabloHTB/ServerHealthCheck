@@ -22,6 +22,7 @@ echo "                                                                          
 TOKEN=''
 
 VPN_SERVER_IDS=(14 29 289 113 201 7 44 314 1 2 5 6 8 9 11 17 18 20 21 23 27 28 30 31 33 35 36 41 42 45 46 47 48 49 50 51 52 54 56 57 58 61 65 66 67 68 69 70 71 73 74 77 122 177 182 219 220 222 223 251 252 280 86 89 253 254 38 202 426 288)
+VPN_SERVER_IDS_VIP=(5 6 8 9 11 17 18 20 21 23 27 28 30 31 33 35 36 41 42 45 46 47 48 49 50 51 52 54 56 57 58 61 65 66 67 68 69 70 71 73 74 77 122)
 
 # Arrays for StartingPoint server IDs and names
 STARTINGPOINT_SERVER_IDS=(412 413 414 415 440 441)
@@ -29,8 +30,8 @@ STARTINGPOINT_SERVER_IDS=(412 413 414 415 440 441)
 
 
 # Arrays to hold machine IDs and names
-MACHINE_IDS=(619 611 608 605 604 603 602 601 600 599 598 597 596 595 594 593 592 591 590 589 588 587 586 585)
-MACHINE_NAMES=("resource" "axlle" "editorial" "blurry" "freelancer" "boardlight" "magicgardens" "solarlab" "mailing" "intuition" "runner" "usage" "iclean" "mist" "headless" "wifinetictwo" "formulax" "builder" "perfection" "jab" "office" "crafty" "skyfall" "pov")
+MACHINE_IDS=(632 619 611 608 605 604 603 602 601 600 599 598 597 596 595 594 593 592 591 590 589 588 587 586 585)
+MACHINE_NAMES=("university" "resource" "axlle" "editorial" "blurry" "freelancer" "boardlight" "magicgardens" "solarlab" "mailing" "intuition" "runner" "usage" "iclean" "mist" "headless" "wifinetictwo" "formulax" "builder" "perfection" "jab" "office" "crafty" "skyfall" "pov")
 
 
 
@@ -209,10 +210,15 @@ map_startingpoint_server_name_to_id() {
 
 # Stop any active machines
 stop_active_machines() {
-    response=$(curl -s --location --request POST "https://labs.hackthebox.com/api/v4/machine/stop" -H "Authorization: Bearer $TOKEN")
-    echo "[+]Stopped active machines"
+    response=$(curl -s --location --request POST "https://labs.hackthebox.com/api/v4/vm/terminate" \
+        -H "Authorization: Bearer $TOKEN" \
+        -H "Content-Type: application/json" \
+        --data '{"machine_id":632}')
+    
+    echo "[+] Terminated machine with ID 632"
     log_verbose "Response: $response"
 }
+
 
 # Switch VPN server
 switch_vpn_server() {
@@ -266,18 +272,24 @@ connect_to_vpn() {
 
 
 spawn_machine() {
-    local url="https://labs.hackthebox.com/api/v4/machine/play/$MACHINE_ID"
-    
-    # Change URL if -s flag is provided
+    local url="https://labs.hackthebox.com/api/v4/vm/spawn"
+    local data="{\"machine_id\": $MACHINE_ID}"
+
+    # Change data if -s flag is provided (Arena mode)
     if [ "$use_arena" = true ]; then
         url="https://labs.hackthebox.com/api/v4/arena/start"
+        data="{\"machine_id\": $MACHINE_ID, \"arena\": true}"
     fi
-    
-    response=$(curl -s --location --request POST "$url" -H "Authorization: Bearer $TOKEN")
-    echo "[+]Spawning machine $MACHINE_NAME on $server_name"
+
+    response=$(curl -s --location --request POST "$url" \
+        -H "Authorization: Bearer $TOKEN" \
+        -H "Content-Type: application/json" \
+        --data "$data")
+
+    echo "[+] Spawning machine $MACHINE_NAME on $server_name"
     log_verbose "Response: $response"
-    
-    # Wait 30 seconds to allow machine to initialize before getting IP
+
+    # Wait 20 seconds to allow the machine to initialize before getting IP
     SECONDS=0
     while [ $SECONDS -lt 20 ]; do
         for s in / - \\ \|; do
@@ -286,6 +298,7 @@ spawn_machine() {
         done
     done
 }
+
 
 
 
